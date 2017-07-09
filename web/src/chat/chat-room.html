@@ -586,7 +586,8 @@
     </template>
 
     <div on-tap="captureTap_">
-      <paper-drawer-panel id="drawer" class="drawer-panel" right-drawer disable-swipe force-narrow>
+      <app-drawer-layout>
+      <app-drawer slot="drawer" id="drawer" class="drawer-panel" right-drawer disable-swipe force-narrow>
         <paper-material drawer class="drawer-content">
           <ghvz-chat-info-drawer
               bridge="[[bridge]]"
@@ -597,7 +598,8 @@
           </ghvz-chat-info-drawer>
         </paper-material>
         <div main></div>
-      </paper-drawer-panel>
+      </app-drawer>
+      </app-drawer-layout>
     </div>
 
     <ghvz-chat-info-actions

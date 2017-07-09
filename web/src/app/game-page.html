@@ -102,7 +102,8 @@
     <!-- For webdrivers -->
     <div name="gameLoaded"></div>
 
-    <paper-drawer-panel id="drawer" disable-swipe responsive-width="[[computeResponsiveWidth_(isMobile)]]">
+    <app-drawer-layout>
+    <app-drawer slot="drawer" id="drawer" disable-swipe responsive-width="[[computeResponsiveWidth_(isMobile)]]">
       <paper-material drawer>
         <ghvz-drawer
             bridge="[[bridge]]"
@@ -138,7 +139,8 @@
           </ghvz-mobile-app>
         </template>
       </div>
-    </paper-drawer-panel>
+    </app-drawer>
+    </app-drawer-layout>
   </template>
 </template>
 </dom-module>
