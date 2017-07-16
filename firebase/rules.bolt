@@ -161,10 +161,10 @@ type Message {
   location: Location | Null;
 
   read() {
-    isAuthenticatedMember(this.parent().accessGroupId, this.parent().gameId)
+    isAuthenticatedMember(root.chatRooms[ChatRoomId].accessGroupId, root.chatRooms[ChatRoomId].gameId)
   }
 
-  write() {  isAuthenticatedMember(this.parent().accessGroupId, this.parent().gameId)   }
+  write() {  isAuthenticatedMember(root.chatRooms[ChatRoomId].accessGroupId, root.chatRooms[ChatRoomId].gameId)   }
 
 }
 
@@ -509,11 +509,16 @@ type PublicLife {
  Possible Paths
 ******************************************************************************/
 /chatRooms/{ChatRoomId} is ChatRoom;
-/chatRooms/{ChatRoomId}/messages {
+/messages/{ChatRoomId} {
   index() {['time']}
-  write() {isAuthenticatedMember(this.parent().accessGroupId, this.parent().gameId)}
+  read() {
+    isAuthenticatedMember(root.chatRooms[ChatRoomId].accessGroupId, root.chatRooms[ChatRoomId].gameId)
+  }
+  write() {
+    isAuthenticatedMember(root.chatRooms[ChatRoomId].accessGroupId, root.chatRooms[ChatRoomId].gameId)
+  }
 }
-/chatRooms/ChatRoomId/messages/{MessageId} is Message;
+/messages/{ChatRoomId}/{MessageId} is Message;
 /games/{GameId} is Game;
 /games is PublicEntity;
 /games/GameId/adminUsers/{UserId} is User;

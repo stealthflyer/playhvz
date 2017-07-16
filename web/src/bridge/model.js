@@ -94,8 +94,8 @@ var models = {
     mapId: ''
   },
   message: {
-    link: ['chatRooms', 'chatRoomId', 'messages', 'messageId'],
-    path: ['chatRooms', 'chatRoomId', 'messages'],
+    link: ['messages', 'chatRoomId', 'messageId'],
+    path: ['messages', 'chatRoomId'],
     message: '',
     image: '',
     index: '',

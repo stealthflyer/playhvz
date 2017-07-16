@@ -36,14 +36,14 @@ window.FirebaseListener = (function () {
       this.firebaseObjectPaths = {};
 
       this.printMissingPathsInterval =
-          setInterval(() => {
-            if (Object.keys(this.firebaseObjectPaths)) {
-              console.log('Waiting on paths:');
-              for (let path in this.firebaseObjectPaths) {
-                console.log(path);
-              }
+        setInterval(() => {
+          if (Object.keys(this.firebaseObjectPaths)) {
+            console.log('Waiting on paths:');
+            for (let path in this.firebaseObjectPaths) {
+              console.log(path);
             }
-          }, 10000);
+          }
+        }, 10000);
     }
 
     setupPrivateModelAndReaderAndWriter(privateModelGame) {
@@ -159,7 +159,7 @@ window.FirebaseListener = (function () {
 
       if (!anyLeft) {
         let endTime = new Date().getTime();
-        console.log('All objects loaded in', (endTime - this.timeWhenLoadingStarted)/1000, 'seconds');
+        console.log('All objects loaded in', (endTime - this.timeWhenLoadingStarted) / 1000, 'seconds');
         clearTimeout(this.printMissingPathsInterval);
         this.firebaseObjectsLoaded();
       }
@@ -214,7 +214,7 @@ window.FirebaseListener = (function () {
       let gameFoundPromise = new Promise((resolve, reject) => {
         gameFoundResolve = resolve;
       });
-      
+
       this.timeWhenLoadingStarted = new Date().getTime();
       console.log('listening to a game!', this.timeWhenLoadingStarted, listeningUserId, gameId);
       this.destination.addDestination(destination);
@@ -463,60 +463,52 @@ window.FirebaseListener = (function () {
     listenToChatRoom_(chatRoomId) {
       this.listenToModel(new Model.ChatRoom(chatRoomId, this.gameIdObj), (obj, snapVal) => {
         this.listenToGroup_(obj.accessGroupId);
-        // Only listen to anything more recent
-        // Temporary, until some day when we split /messages into its own root or something
-        let lastMessage = {};
-        let messagesMap = snapVal.messages;
-        let messages = [];
-        for (let messageId in messagesMap) {
-          let message = messagesMap[messageId];
-          message.id = messageId;
-          messages.push(message);
-        }
-        messages.sort((a, b) => b.time - a.time);
 
-        // Add all the messages directly into the model
-        // only the last 100 because Polymer doesn't like too many
-        for(var m in messages.slice(-100)) {
-          new Model.Message(messages[m].id, {
-            gameId: this.gameIdObj.gameId,
-            chatRoomId: chatRoomId
-          }).initialize(messages[m], this.game, this.writer);
-        }
-        
-        if(messages.length > 0)
-          lastMessage = messages[0];
-        else
-          lastMessage.time = 0;
-
-        this.firebaseRoot.child(obj.link + '/messages')
-          .orderByChild('time').startAt(lastMessage.time + 1).on('child_added', (snap) => {
-            // WARNING the +1 above is to prevent the last message from dupe
-            // could be an issue if a message came at exactly the same time
-            this.listenToModel(new Model.Message(snap.getKey(), {
-              gameId: this.gameIdObj.gameId,
-              chatRoomId: chatRoomId
-            }));
+        this.increment('(chats)');
+        this.firebaseRoot.child('/messages/' + chatRoomId)
+          .orderByChild('time').limitToLast(300).once('value').then((snap) => {
+            this.decrement('(chats)');
+            let messages = snap.val();
+            let lastMessage = {};
+            for (var m in messages) {
+              new Model.Message(m, {
+                gameId: this.gameIdObj.gameId,
+                chatRoomId: chatRoomId
+              }).initialize(messages[m], this.game, this.writer);
+            }
+            if (messages.length > 0)
+              lastMessage = messages[0];
+            else
+              lastMessage.time = 0;
+            this.firebaseRoot.child(obj.link + '/messages')
+              .orderByChild('time').startAt(lastMessage.time + 1).on('child_added', (snap) => {
+                // WARNING the +1 above is to prevent the last message from dupe
+                // could be an issue if a message came at exactly the same time
+                this.listenToModel(new Model.Message(snap.getKey(), {
+                  gameId: this.gameIdObj.gameId,
+                  chatRoomId: chatRoomId
+                }));
+              });
           });
 
         this.firebaseRoot.child(obj.link + '/requestCategories')
           .on('child_added', (snap) => {
             let requestCategoryId = snap.getKey();
             this.listenToModel(
-                new Model.RequestCategory(requestCategoryId, {
-                  gameId: this.gameIdObj.gameId,
-                  chatRoomId: chatRoomId,
-                }),
-                (obj, snapVal) => {
-                  this.firebaseRoot.child(obj.link + '/requests')
-                      .on('child_added', (requestSnap) => {
-                        this.listenToModel(new Model.Request(requestSnap.getKey(), {
-                          gameId: this.gameIdObj.gameId,
-                          chatRoomId: chatRoomId,
-                          requestCategoryId: requestCategoryId,
-                        }));
-                      });
-                });
+              new Model.RequestCategory(requestCategoryId, {
+                gameId: this.gameIdObj.gameId,
+                chatRoomId: chatRoomId,
+              }),
+              (obj, snapVal) => {
+                this.firebaseRoot.child(obj.link + '/requests')
+                  .on('child_added', (requestSnap) => {
+                    this.listenToModel(new Model.Request(requestSnap.getKey(), {
+                      gameId: this.gameIdObj.gameId,
+                      chatRoomId: chatRoomId,
+                      requestCategoryId: requestCategoryId,
+                    }));
+                  });
+              });
           });
       });
     }
